@@ -26,10 +26,7 @@ public class GerenciadorDeProduto  {
         return null;
     }
     public void removerProduto(int id) {
-        for (Produto produto : produtos) {
-            if (produto.getId() == id) {
-                produtos.remove(produto);
-            }
+        produtos.removeIf(produto -> produto.getId() == id);
         }
-    }
 }
+

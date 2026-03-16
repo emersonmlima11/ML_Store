@@ -1,6 +1,6 @@
 package br.ufpb.iago.mlStore;
 
-public class User extends Endereco {
+public class User  {
     private int id;
     private String nomeCompleto;
     private String password;

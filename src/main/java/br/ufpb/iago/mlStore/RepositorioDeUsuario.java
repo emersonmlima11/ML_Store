@@ -3,10 +3,10 @@ package br.ufpb.iago.mlStore;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RepositorioDeUsuario extends User{
+public class RepositorioDeUsuario {
     static List<User> users = new ArrayList<User>();
     private static int id = 0;
-    public List<User> acharTodos(){
+    public static List<User> acharTodos(){
         return users;
     }
 

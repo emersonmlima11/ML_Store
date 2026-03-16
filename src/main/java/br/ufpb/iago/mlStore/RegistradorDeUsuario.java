@@ -2,14 +2,14 @@ package br.ufpb.iago.mlStore;
 
 import java.util.Scanner;
 
-public class RegistradorDeUsuario extends User{
+public class RegistradorDeUsuario {
     Scanner sc = new Scanner(System.in);
     private String nomeCompleto;
     private String password;
     private int id;
 
 
-    public User quardar(){
+    public User guardar(){
 
         User user = new User();
 
@@ -18,7 +18,7 @@ public class RegistradorDeUsuario extends User{
         user.setNomeCompleto(nomeCompleto);
 
 
-        System.out.println("Coloque Senha: "); //remenber to ad a password check
+        System.out.println("Coloque Senha: ");
         password = sc.nextLine();
         user.setPassword(password);
         return user;
