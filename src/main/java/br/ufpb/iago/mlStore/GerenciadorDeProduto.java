@@ -24,13 +24,13 @@ public class GerenciadorDeProduto  implements Gerenciador{
     }
 
     @Override
-    public Produto buscarProdutoPorId(int id) {
+    public Produto buscarProdutoPorId(int id) throws ProdutoNaoEncontradoException {
         for (Produto produto : this.produtos) {
             if (produto.getId() == id) {
                 return produto;
             }
         }
-        return null;
+        throw new ProdutoNaoEncontradoException("Produto com ID " + id + " não foi encontrado no sistema.");
     }
 
     @Override

@@ -23,12 +23,14 @@ public class Produto {
             this.quantidadeEstoque += quantidade;
         }
     }
-    public boolean vender (int quantidade){
-        if (quantidade > 0 && this.quantidadeEstoque >= quantidade) {
-            this.quantidadeEstoque -= quantidade;
-            return true;
+    public void vender(int quantidade) throws EstoqueInsuficienteException {
+        if (quantidade <= 0) {
+            throw new IllegalArgumentException("A quantidade de venda deve ser maior que zero.");
         }
-        return false;
+        if (this.quantidadeEstoque < quantidade) {
+            throw new EstoqueInsuficienteException("Estoque insuficiente para o produto: " + this.nome);
+        }
+        this.quantidadeEstoque -= quantidade;
     }
 
 
