@@ -34,6 +34,17 @@ public class GerenciadorDeProduto  implements Gerenciador{
     }
 
     @Override
+    public List<Produto> buscarProdutoPorNome(String nome) {
+        List<Produto> produtos = new ArrayList<>();
+        for(Produto produto : this.produtos) {
+            if(produto.getNome().toLowerCase().contains(nome.toLowerCase())) {
+                produtos.add(produto);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public void removerProduto(int id) {
         produtos.removeIf(produto -> produto.getId() == id);
     }
