@@ -24,10 +24,21 @@ public class GerenciadorDeProduto  implements Gerenciador{
     }
 
     @Override
-    public Produto buscarProdutoPorId(int id) {
+    public Produto buscarProdutoPorId(int id) throws ProdutoNaoEncontradoException {
         for (Produto produto : this.produtos) {
             if (produto.getId() == id) {
                 return produto;
+            }
+        }
+        throw new ProdutoNaoEncontradoException("Produto com ID " + id + " não foi encontrado no sistema.");
+    }
+
+    @Override
+    public List<Produto> buscarProdutoPorNome(String nome) {
+        List<Produto> produtos = new ArrayList<>();
+        for(Produto produto : this.produtos) {
+            if(produto.getNome().toLowerCase().contains(nome.toLowerCase())) {
+                produtos.add(produto);
             }
         }
         return null;
