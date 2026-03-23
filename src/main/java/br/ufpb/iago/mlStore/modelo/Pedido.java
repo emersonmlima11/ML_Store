@@ -1,17 +1,19 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.modelo;
+
+import br.ufpb.iago.mlStore.excepcions.EstoqueInsuficienteException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Pedido {
     private int idPedido;
-    private User cliente;
+    private Cliente cliente;
     private List<Produto> produtos;
     private double valorTotal;
     private String status;
 
 
-    public Pedido(int idPedido, User cliente) {
+    public Pedido(int idPedido, Cliente cliente) {
         this.idPedido = idPedido;
         this.cliente = cliente;
 

@@ -1,4 +1,4 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.modelo;
 
 public class Endereco {
     private String logradouro;

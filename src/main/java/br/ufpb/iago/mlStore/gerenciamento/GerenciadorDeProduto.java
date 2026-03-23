@@ -1,9 +1,12 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.gerenciamento;
+
+import br.ufpb.iago.mlStore.excepcions.ProdutoNaoEncontradoException;
+import br.ufpb.iago.mlStore.modelo.Produto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GerenciadorDeProduto  implements Gerenciador{
+public class GerenciadorDeProduto  implements Gerenciador {
     private List<Produto> produtos;
 
     public GerenciadorDeProduto() {

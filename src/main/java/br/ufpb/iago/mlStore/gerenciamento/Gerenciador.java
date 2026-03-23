@@ -1,4 +1,7 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.gerenciamento;
+
+import br.ufpb.iago.mlStore.excepcions.ProdutoNaoEncontradoException;
+import br.ufpb.iago.mlStore.modelo.Produto;
 
 import java.util.List;
 

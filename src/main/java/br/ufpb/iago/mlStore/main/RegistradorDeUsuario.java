@@ -1,4 +1,7 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.main;
+
+import br.ufpb.iago.mlStore.modelo.Cliente;
+import br.ufpb.iago.mlStore.modelo.User;
 
 import java.util.Scanner;
 
@@ -10,7 +13,7 @@ public class RegistradorDeUsuario {
 
 
     public User guardar() {
-        User user = new User();
+        User user = new Cliente();
 
         try {
             System.out.println("Coloque Nome do Usuario: ");
