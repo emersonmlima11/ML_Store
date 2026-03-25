@@ -1,4 +1,6 @@
-package br.ufpb.iago.mlStore;
+package br.ufpb.iago.mlStore.modelo;
+
+import br.ufpb.iago.mlStore.excepcions.EstoqueInsuficienteException;
 
 public class Produto {
     private int id;
