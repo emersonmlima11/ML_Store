@@ -7,24 +7,33 @@ public class Produto {
     private String nome;
     private double preco;
     private int quantidadeEstoque;
+    private TipoProduto tipo;
 
-    public Produto(int id, String nome, double preco, int quantidadeEstoque) {
+    public Produto(int id, String nome, double preco, int quantidadeEstoque, TipoProduto tipo) {
         this.id = id;
         this.nome = nome;
         this.preco = preco;
         this.quantidadeEstoque = quantidadeEstoque;
+        this.tipo = tipo;
     }
+
     public Produto() {
         this.id = 0;
         this.nome = "";
         this.preco = 0;
         this.quantidadeEstoque = 0;
     }
+
+    public double valorComImposto(){
+        return this.preco + (this.preco * (this.tipo.getImposto()/100));
+    }
+
     public void adicionarEstoque(int quantidade){
         if (quantidade > 0){
             this.quantidadeEstoque += quantidade;
         }
     }
+
     public void vender(int quantidade) throws EstoqueInsuficienteException {
         if (quantidade <= 0) {
             throw new IllegalArgumentException("A quantidade de venda deve ser maior que zero.");
@@ -61,6 +70,10 @@ public class Produto {
     }
     public void setQuantidadeEstoque(int quantidadeEstoque) {
         this.quantidadeEstoque = quantidadeEstoque;
+    }
+
+    public TipoProduto getTipo() {
+        return tipo;
     }
 
     @Override

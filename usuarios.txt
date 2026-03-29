@@ -1,0 +1,2 @@
+ADMIN;João Silva;joao@email.com;senha123;Rua A;123;Bairro B;Cidade C;PB;Apto 1;ADMIN001
+CLIENTE;Maria Souza;maria@email.com;senha456;Rua B;456;Bairro C;Cidade D;PB;Casa;123.456.789-00

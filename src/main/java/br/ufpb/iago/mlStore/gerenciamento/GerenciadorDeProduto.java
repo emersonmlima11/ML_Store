@@ -1,22 +1,33 @@
 package br.ufpb.iago.mlStore.gerenciamento;
 
+import br.ufpb.iago.mlStore.armazenamento.PersistenciaDeProdutos;
+import br.ufpb.iago.mlStore.armazenamento.PersistenciaDeTipos;
 import br.ufpb.iago.mlStore.excepcions.ProdutoNaoEncontradoException;
 import br.ufpb.iago.mlStore.modelo.Produto;
+import br.ufpb.iago.mlStore.modelo.TipoProduto;
 
+import javax.imageio.IIOException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GerenciadorDeProduto  implements Gerenciador {
     private List<Produto> produtos;
+    private PersistenciaDeProdutos pdp = new PersistenciaDeProdutos();
 
-    public GerenciadorDeProduto() {
-        this.produtos = new ArrayList<Produto>();
+    public GerenciadorDeProduto(List<TipoProduto> tipos) throws IOException {
+        this.produtos = pdp.carregar(tipos);
+    }
+
+    public List<Produto> getProdutos() {
+        return produtos;
     }
 
     @Override
-    public void cadastrarProduto(Produto produto) {
+    public void cadastrarProduto(Produto produto) throws IOException{
         if (produto != null) {
         this.produtos.add(produto);
+        pdp.salvar(this.produtos);
         System.out.println("Produto Cadastrado com sucesso!");
         }
     }
@@ -38,18 +49,19 @@ public class GerenciadorDeProduto  implements Gerenciador {
 
     @Override
     public List<Produto> buscarProdutoPorNome(String nome) {
-        List<Produto> produtos = new ArrayList<>();
+        List<Produto> produtosBusca = new ArrayList<>();
         for(Produto produto : this.produtos) {
             if(produto.getNome().toLowerCase().contains(nome.toLowerCase())) {
                 produtos.add(produto);
             }
         }
-        return null;
+        return produtosBusca;
     }
 
     @Override
-    public void removerProduto(int id) {
+    public void removerProduto(int id) throws IOException{
         produtos.removeIf(produto -> produto.getId() == id);
+        pdp.salvar(this.produtos);
     }
 
     @Override

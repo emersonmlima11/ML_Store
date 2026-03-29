@@ -6,23 +6,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Pedido {
-    private int idPedido;
+    private String idPedido;
     private Cliente cliente;
     private List<Produto> produtos;
     private double valorTotal;
     private String status;
 
 
-    public Pedido(int idPedido, Cliente cliente) {
+    public Pedido(String idPedido, Cliente cliente, List<Produto> produtosDoPedido, double v, String parte) {
         this.idPedido = idPedido;
         this.cliente = cliente;
 
-        this.produtos = new ArrayList<Produto>();
+        this.produtos = produtosDoPedido;
+
+        this.valorTotal = v;
+
+        this.status = parte;
+    }
+
+    public Pedido(String idPedido, Cliente cliente, List<Produto> produtosDoPedido) {
+        this.idPedido = idPedido;
+        this.cliente = cliente;
+
+        this.produtos = produtosDoPedido;
 
         this.valorTotal = 0.0;
 
         this.status = "ABERTO";
     }
+
+    public List<Produto> getProdutos() {
+        return produtos;
+    }
+
 
     public void addProdutos(Produto produto){
         if(produto != null){
@@ -92,5 +108,35 @@ public class Pedido {
         }
     }
 
+    public String getIdPedido() {
+        return idPedido;
+    }
 
+    public void setIdPedido(String idPedido) {
+        this.idPedido = idPedido;
+    }
+
+    public double getValorTotal() {
+        return valorTotal;
+    }
+
+    public void setValorTotal(double valorTotal) {
+        this.valorTotal = valorTotal;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
