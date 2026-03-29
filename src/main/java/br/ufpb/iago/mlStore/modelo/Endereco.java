@@ -29,6 +29,8 @@ public class Endereco {
     public Endereco() {
         this("","","","","", "");
     }
+
+
     public String getLogradouro() {
         return logradouro;
     }

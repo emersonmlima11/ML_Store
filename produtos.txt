@@ -1,0 +1,3 @@
+1;Notebook;2500.0;10;Eletrônico
+2;Camiseta;49.9;50;Roupa
+3;Arroz;8.5;100;Alimento
