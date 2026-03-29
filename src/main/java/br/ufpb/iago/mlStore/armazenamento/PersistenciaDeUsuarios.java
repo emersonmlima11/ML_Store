@@ -14,20 +14,17 @@ public class PersistenciaDeUsuarios extends Persistencia{
 
         for(User u : usuarios){
             if(u instanceof Admin a){
-                String linha = "ADMIN;" +a.getNomeCompleto()+";"+a.getEmail()+";"
-                            +a.getPassword()+";"+a.getEndereco().getLogradouro()+";"+a.getEndereco().getNumero()+";"
-                            +a.getEndereco().getBairro()+";"+a.getEndereco().getCidade()+";"+a.getEndereco().getEstado()+
-                            ";"+a.getEndereco().getComplemento()+";"+a.getCodigoDeAcesso();
+                String linha = "ADMIN;" + a.getNomeCompleto() + ";" + a.getEmail() + ";"
+                        + a.getPassword() + ";" + a.getEndereco().format() + ";"
+                        + a.getCodigoDeAcesso();
                 linhas.add(linha);
 
-            }else if(u instanceof Cliente c){
-                String linha = "CLIENTE;" + c.getNomeCompleto()+";"+c.getEmail()+";"
-                        +c.getPassword()+";"+c.getEndereco().getLogradouro()+";"+c.getEndereco().getNumero()+";"
-                        +c.getEndereco().getBairro()+";"+c.getEndereco().getCidade()+";"+c.getEndereco().getEstado()+
-                        ";"+c.getEndereco().getComplemento()+";"+c.getCpf();
+            } else if(u instanceof Cliente c){
+                String linha = "CLIENTE;" + c.getNomeCompleto() + ";" + c.getEmail() + ";"
+                        + c.getPassword() + ";" + c.getEndereco().format() + ";"
+                        + c.getCpf();
                 linhas.add(linha);
             }
-
         }
         salvarLinhas(linhas, CAMINHO);
     }

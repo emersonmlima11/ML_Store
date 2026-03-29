@@ -13,23 +13,26 @@ import java.util.List;
 public class PersistenciaDePedidos extends Persistencia {
     private static final String CAMINHO = "pedidos.txt";
 
-    public void salvar(List<Pedido> pedidos) throws IOException{
+    public void salvar(List<Pedido> pedidos) throws IOException {
         List<String> linhas = new ArrayList<>();
         for (Pedido p : pedidos) {
 
-            // converte lista de produtos para nomes separados por vírgula
-            StringBuilder nomesProdutos = new StringBuilder();
+            // 1. Criamos uma lista simples só com os IDs (em formato de String)
+            List<String> idsProdutos = new ArrayList<>();
             for (Produto prod : p.getProdutos()) {
-                if (!nomesProdutos.isEmpty()) nomesProdutos.append(",");
-                nomesProdutos.append(prod.getId());
+                idsProdutos.add(String.valueOf(prod.getId()));
             }
 
+
+
+            String nomesProdutos = String.join(",", idsProdutos);
+
+            // 3. Montamos a linha final
             linhas.add(p.getIdPedido() + ";" + p.getCliente().getCpf() + ";"
                     + nomesProdutos + ";" + p.getValorTotal() + ";" + p.getStatus());
         }
         salvarLinhas(linhas, CAMINHO);
     }
-
     public List<Pedido> carregar(List<User> usuarios, List<Produto> produtos) throws IOException{
         List<Pedido> pedidos = new ArrayList<>();
 

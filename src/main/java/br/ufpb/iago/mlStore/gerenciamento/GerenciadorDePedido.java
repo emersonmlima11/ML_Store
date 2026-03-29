@@ -10,7 +10,7 @@ import java.util.List;
 
 public class GerenciadorDePedido {
     private List<Pedido> pedidos;
-    private static int contadorPedidos = 0;
+    private  int contadorPedidos = 0;
     private static PersistenciaDePedidos pdp = new PersistenciaDePedidos();
 
     public GerenciadorDePedido(List<User> usuarios, List<Produto> produtos) throws IOException {

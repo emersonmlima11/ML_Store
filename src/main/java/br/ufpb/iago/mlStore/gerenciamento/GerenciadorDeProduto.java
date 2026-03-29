@@ -52,7 +52,7 @@ public class GerenciadorDeProduto  implements Gerenciador {
         List<Produto> produtosBusca = new ArrayList<>();
         for(Produto produto : this.produtos) {
             if(produto.getNome().toLowerCase().contains(nome.toLowerCase())) {
-                produtos.add(produto);
+                produtosBusca.add(produto);
             }
         }
         return produtosBusca;
@@ -87,7 +87,7 @@ public class GerenciadorDeProduto  implements Gerenciador {
     }
 
     @Override
-    public int quatidadeProdutos() {
+    public int quantidadeProdutos() {
         return this.produtos.size();
     }
 }

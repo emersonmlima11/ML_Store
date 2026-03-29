@@ -63,10 +63,10 @@ public class Teste {
         Endereco endCliente = new Endereco("Rua B", "456", "Bairro C", "Cidade D", "PB", "Casa");
 
         Admin admin = new Admin("João Silva", "joao@email.com", "senha123", endAdmin, "ADMIN001");
-        admin.setId(1);
+        //admin.setId(1);
 
         Cliente cliente = new Cliente("Maria Souza", "maria@email.com", "senha456", endCliente, "123.456.789-00");
-        cliente.setId(2);
+        //cliente.setId(2);
 
         List<User> usuarios = new ArrayList<>();
         usuarios.add(admin);

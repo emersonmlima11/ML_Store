@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RepositorioDeUsuario {
-    static List<User> users;
+    private List<User> users;
     private static int contadorAdmin;
     private static PersistenciaDeUsuarios pdu = new PersistenciaDeUsuarios();
 
@@ -49,7 +49,7 @@ public class RepositorioDeUsuario {
         return contador;
     }
 
-    public static List<User> acharTodos() {
+    public  List<User> acharTodos() {
         return users;
     }
 
@@ -69,24 +69,12 @@ public class RepositorioDeUsuario {
     }
 
     public void removerCliente(String cpf) throws IOException{
-        for(User u : users){
-            if(u instanceof Cliente c){
-                if(c.getCpf().equals(cpf)){
-                    users.remove(c);
-                }
-            }
-        }
+        users.removeIf(u -> u instanceof Cliente c && c.getCpf().equals(cpf));
         pdu.salvar(users);
     }
 
-    public void removerAdmin(String codigo) throws  IOException{
-        for(User u : users){
-            if(u instanceof Admin a){
-                if(a.getCodigoDeAcesso().equals(codigo)){
-                    users.remove(a);
-                }
-            }
-        }
+    public void removerAdmin(String codigo) throws IOException{
+        users.removeIf(u -> u instanceof Admin a && a.getCodigoDeAcesso().equals(codigo));
         pdu.salvar(users);
     }
 }

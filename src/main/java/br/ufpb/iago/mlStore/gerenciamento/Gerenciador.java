@@ -14,5 +14,5 @@ public interface Gerenciador {
     public void removerProduto(int id) throws IOException;
     public List<Produto> filtrarProdutosPorValor(double menorValor, double maiorValor);
     public boolean disponibilidadeEmEstoque(int id);
-    public int quatidadeProdutos();
+    public int quantidadeProdutos();
 }
