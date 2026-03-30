@@ -4,24 +4,24 @@ import br.ufpb.iago.mlStore.armazenamento.*;
 import br.ufpb.iago.mlStore.excepcions.*;
 import br.ufpb.iago.mlStore.gerenciamento.*;
 import br.ufpb.iago.mlStore.modelo.*;
+import br.ufpb.iago.mlStore.repositorio.RepositorioDeTipos;
+import br.ufpb.iago.mlStore.repositorio.RepositorioDeUsuario;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
 
     // Instâncias Globais de Persistência, Gerenciamento e UI
-    private static PersistenciaDeUsuarios persistenciaUsuarios = new PersistenciaDeUsuarios();
-    private static PersistenciaDeTipos persistenciaTipos = new PersistenciaDeTipos();
+    private static RepositorioDeUsuario repositorioUsuario;
+    private static RepositorioDeTipos repositorioTipos;
     private static GerenciadorDeProduto gerenciadorProduto;
     private static GerenciadorDePedido gerenciadorPedido;
 
     // Nossa nova classe de visualização (Fim do acoplamento com o Swing!)
     private static InterfaceUsuario ui = new InterfaceUsuario();
 
-    private static List<User> listaUsuarios = new ArrayList<>();
-    private static List<TipoProduto> listaTipos = new ArrayList<>();
+
 
     public static void main(String[] args) {
         inicializarSistema();
@@ -30,21 +30,12 @@ public class Main {
 
     private static void inicializarSistema() {
         try {
-            try {
-                listaTipos = persistenciaTipos.carregar();
-            } catch (Exception e) {
-                listaTipos = new ArrayList<>();
-            }
+            repositorioTipos = new RepositorioDeTipos();
+            repositorioUsuario = new RepositorioDeUsuario();
 
-            gerenciadorProduto = new GerenciadorDeProduto(listaTipos);
-
-            try {
-                listaUsuarios = persistenciaUsuarios.carregarUsuarios(new ArrayList<>());
-            } catch (Exception e) {
-                listaUsuarios = new ArrayList<>();
-            }
-
-            gerenciadorPedido = new GerenciadorDePedido(listaUsuarios, gerenciadorProduto.listarProdutos());
+            // Passamos as listas dos repositórios para os gerenciadores
+            gerenciadorProduto = new GerenciadorDeProduto(repositorioTipos.getTiposDeProdutos());
+            gerenciadorPedido = new GerenciadorDePedido(repositorioUsuario.acharTodos(), gerenciadorProduto.listarProdutos());
 
         } catch (IOException e) {
             ui.mostrarErro("Erro Crítico", "Erro ao inicializar os arquivos do sistema: " + e.getMessage());
@@ -170,24 +161,22 @@ public class Main {
 
     private static void cadastrarProdutoUI() {
         try {
-            if (listaTipos.isEmpty()) {
+            if (repositorioTipos.getTiposDeProdutos().isEmpty()) {
                 ui.mostrarMensagem("Aviso", "Não há Tipos de Produto cadastrados. Cadastrando 'Geral' padrão...");
                 TipoProduto tipoPadrao = new TipoProduto("Geral", 10.0);
-                listaTipos.add(tipoPadrao);
-                persistenciaTipos.salvar(listaTipos);
+                repositorioTipos.addTipo(tipoPadrao); // Salva usando o repositório
             }
 
-            int id = ui.pedirInteiro("ID do Produto (Numérico):");
+            int id = gerenciadorProduto.gerarProximoId();
+            ui.mostrarMensagem("ID Automático", "O sistema gerou o ID " + id + " para este novo produto.");
             String nome = ui.pedirTexto("Nome do Produto:");
             double preco = ui.pedirDouble("Preço do Produto (Ex: 15.50):");
             int estoque = ui.pedirInteiro("Quantidade em Estoque:");
 
-            String[] nomesTipos = listaTipos.stream().map(TipoProduto::getNome).toArray(String[]::new);
+            String[] nomesTipos = repositorioTipos.getTiposDeProdutos().stream().map(TipoProduto::getNome).toArray(String[]::new);
             int indexTipo = ui.mostrarMenu("Tipo de Produto", "Escolha o Tipo:", nomesTipos);
-
-            if (indexTipo == -1) return; // Cancelou a escolha do tipo
-
-            TipoProduto tipoSelecionado = listaTipos.get(indexTipo);
+            if (indexTipo == -1) return;
+            TipoProduto tipoSelecionado = repositorioTipos.getTiposDeProdutos().get(indexTipo);
 
             Produto novoProduto = new Produto(id, nome, preco, estoque, tipoSelecionado);
             gerenciadorProduto.cadastrarProduto(novoProduto);
@@ -223,7 +212,7 @@ public class Main {
             String codigo = ui.pedirTexto("Digite o Código de Acesso do Admin:");
             String senha = ui.pedirTexto("Digite a Senha:");
 
-            for (User u : listaUsuarios) {
+            for (User u : repositorioUsuario.acharTodos()) {
                 if (u instanceof Admin a && a.getCodigoDeAcesso().equals(codigo) && a.getPassword().equals(senha)) {
                     ui.mostrarMensagem("Login", "Bem-vindo, " + a.getNomeCompleto() + ".");
                     menuAdmin();
@@ -247,7 +236,7 @@ public class Main {
             String cpf = ui.pedirTexto("Digite seu CPF:");
             String senha = ui.pedirTexto("Digite sua Senha:");
 
-            for (User u : listaUsuarios) {
+            for (User u : repositorioUsuario.acharTodos()) {
                 if (u instanceof Cliente c && c.getCpf().equals(cpf) && c.getPassword().equals(senha)) {
                     ui.mostrarMensagem("Login", "Bem-vindo, " + c.getNomeCompleto() + ".");
                     menuCliente(c);
@@ -270,14 +259,14 @@ public class Main {
             String cidade = ui.pedirTexto("Endereço - Cidade:");
             String estado = ui.pedirTexto("Endereço - Estado (UF):");
 
-            // Opcional pode ficar com um traço se a pessoa digitar vazio, pois a nossa ui.pedirTexto impede strings vazias
+            // Opcional pode ficar com um traço se a pessoa digitar vazio
             String complemento = ui.pedirTexto("Endereço - Complemento (Digite '-' se não houver):");
 
+            // 1. Cria o Endereço APENAS UMA VEZ
             Endereco endereco = new Endereco(logradouro, numero, bairro, cidade, estado, complemento);
-            Cliente novoCliente = new Cliente(nomeCompleto, email, password, endereco, cpf);
 
-            listaUsuarios.add(novoCliente);
-            persistenciaUsuarios.salvar(listaUsuarios);
+            // 2. O repositório cria o cliente e salva no arquivo automaticamente!
+            repositorioUsuario.cadastrarCliente(nomeCompleto, email, password, endereco, cpf);
 
             ui.mostrarMensagem("Sucesso", "Cliente registrado com sucesso!");
         } catch (OperacaoCanceladaException e) {
@@ -292,11 +281,10 @@ public class Main {
             String nome = ui.pedirTexto("Nome do Admin:");
             String email = ui.pedirTexto("Email:");
             String senha = ui.pedirTexto("Senha:");
-            String codigo = ui.pedirTexto("Código de Acesso (Login):");
 
-            Admin novoAdmin = new Admin(nome, email, senha, new Endereco(), codigo);
-            listaUsuarios.add(novoAdmin);
-            persistenciaUsuarios.salvar(listaUsuarios);
+            // O Repositório já gera o código "ADMIN00X" e guarda no ficheiro
+            repositorioUsuario.cadastrarAdmin(nome, email, senha, new Endereco());
+
             ui.mostrarMensagem("Sucesso", "Admin cadastrado com sucesso!");
         } catch (OperacaoCanceladaException e) { /* Volta pro menu */ }
         catch (Exception e) {

@@ -23,6 +23,21 @@ public class GerenciadorDeProduto  implements Gerenciador {
         return produtos;
     }
 
+    public int gerarProximoId() {
+        if (this.produtos.isEmpty()) {
+            return 1; // Se não houver produtos, o primeiro ID será 1
+        }
+
+        int maiorId = 0;
+        for (Produto p : this.produtos) {
+            if (p.getId() > maiorId) {
+                maiorId = p.getId();
+            }
+        }
+
+        return maiorId + 1; // Devolve o maior ID encontrado + 1
+    }
+
     @Override
     public void cadastrarProduto(Produto produto) throws IOException{
         if (produto != null) {

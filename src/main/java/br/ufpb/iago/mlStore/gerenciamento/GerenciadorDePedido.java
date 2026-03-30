@@ -16,16 +16,20 @@ public class GerenciadorDePedido {
     private  int contadorPedidos = 0;
     private static PersistenciaDePedidos pdp = new PersistenciaDePedidos();
 
+    private List<Produto> listaProdutosGlobais;
+    private static br.ufpb.iago.mlStore.armazenamento.PersistenciaDeProdutos pdpProdutos = new br.ufpb.iago.mlStore.armazenamento.PersistenciaDeProdutos();
+
     public GerenciadorDePedido(List<User> usuarios, List<Produto> produtos) throws IOException {
         pedidos = pdp.carregar(usuarios, produtos);
         this.contadorPedidos = contarPedidos();
+        this.listaProdutosGlobais = produtos; // NOVO: Guarda a referência da lista
     }
 
     public GerenciadorDePedido(List<User> usuarios) throws IOException {
         pedidos = pdp.carregar(usuarios, new ArrayList<>());
         this.contadorPedidos = contarPedidos();
+        this.listaProdutosGlobais = new ArrayList<>(); // NOVO
     }
-
     public Pedido buscarPedidoPorId(String idPedido) {
         for (Pedido p : pedidos) {
             if (p.getIdPedido().equals(idPedido)) {
@@ -65,10 +69,10 @@ public class GerenciadorDePedido {
     public void finalizarPedido(String idPedido) throws IOException, PedidoStatusInvalidoException, PedidoVazioException, EstoqueInsuficienteException {
         Pedido pedido = buscarPedidoPorId(idPedido);
 
+        pedido.finalizarPedido(); // Agora é seguro graças à alteração anterior
 
-        pedido.finalizarPedido();
-
-        pdp.salvar(pedidos);
+        pdp.salvar(pedidos); // Guarda o status do pedido
+        pdpProdutos.salvar(listaProdutosGlobais); // NOVO: Guarda o novo estoque no produtos.txt!
     }
 
     public void cancelarPedido(String idPedido) throws IOException{
