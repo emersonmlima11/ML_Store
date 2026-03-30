@@ -1,265 +1,88 @@
 package br.ufpb.iago.mlStore.main;
 
 import br.ufpb.iago.mlStore.armazenamento.*;
+import br.ufpb.iago.mlStore.excepcions.*;
 import br.ufpb.iago.mlStore.gerenciamento.*;
 import br.ufpb.iago.mlStore.modelo.*;
 
-import javax.swing.JOptionPane;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
 
-    // Instâncias Globais de Persistência e Gerenciamento
+    // Instâncias Globais de Persistência, Gerenciamento e UI
     private static PersistenciaDeUsuarios persistenciaUsuarios = new PersistenciaDeUsuarios();
     private static PersistenciaDeTipos persistenciaTipos = new PersistenciaDeTipos();
-
     private static GerenciadorDeProduto gerenciadorProduto;
     private static GerenciadorDePedido gerenciadorPedido;
+
+    // Nossa nova classe de visualização (Fim do acoplamento com o Swing!)
+    private static InterfaceUsuario ui = new InterfaceUsuario();
 
     private static List<User> listaUsuarios = new ArrayList<>();
     private static List<TipoProduto> listaTipos = new ArrayList<>();
 
     public static void main(String[] args) {
-        // Inicializa os dados carregando dos arquivos (txt)
         inicializarSistema();
-
-        boolean rodando = true;
-
-        while (rodando) {
-            String[] opcoes = {"Entrar como Admin", "Entrar como Cliente", "Cadastrar Cliente", "Sair"};
-            int escolha = JOptionPane.showOptionDialog(null,
-                    "Bem-vindo ao mlStore!\nEscolha uma opção:",
-                    "Menu Principal",
-                    JOptionPane.DEFAULT_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null, opcoes, opcoes[0]);
-
-            switch (escolha) {
-                case 0: loginAdmin(); break;
-                case 1: loginCliente(); break;
-                case 2: cadastrarCliente(); break;
-                case 3:
-                case JOptionPane.CLOSED_OPTION:
-                    rodando = false;
-                    JOptionPane.showMessageDialog(null, "Saindo do sistema... Até logo!");
-                    break;
-            }
-        }
+        exibirMenuPrincipal();
     }
 
     private static void inicializarSistema() {
         try {
-            // Tenta carregar os tipos
             try {
                 listaTipos = persistenciaTipos.carregar();
             } catch (Exception e) {
-                listaTipos = new ArrayList<>(); // Se falhar/não existir, inicia vazio
+                listaTipos = new ArrayList<>();
             }
 
-            // Inicia o Gerenciador de Produtos passando os tipos
             gerenciadorProduto = new GerenciadorDeProduto(listaTipos);
 
-            // Inicia os usuários passando uma lista vazia de pedidos inicialmente para evitar erro de loop infinito
             try {
                 listaUsuarios = persistenciaUsuarios.carregarUsuarios(new ArrayList<>());
             } catch (Exception e) {
                 listaUsuarios = new ArrayList<>();
             }
 
-            // Inicia o Gerenciador de Pedidos
             gerenciadorPedido = new GerenciadorDePedido(listaUsuarios, gerenciadorProduto.listarProdutos());
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Erro ao inicializar os arquivos do sistema: " + e.getMessage(), "Erro Crítico", JOptionPane.ERROR_MESSAGE);
+            ui.mostrarErro("Erro Crítico", "Erro ao inicializar os arquivos do sistema: " + e.getMessage());
+            System.exit(1);
         }
     }
 
-    // ================== LOGINS ==================
+    // ================== MENUS PRINCIPAIS ==================
 
-    private static void loginAdmin() {
-        try {
-            String codigoDeAcesso = solicitarDado("Digite o Código de Acesso do Admin:");
-            String senha = solicitarDado("Digite a Senha:");
+    private static void exibirMenuPrincipal() {
+        boolean rodando = true;
+        while (rodando) {
+            String[] opcoes = {"Entrar como Admin", "Entrar como Cliente", "Cadastrar Cliente", "Sair"};
+            int escolha = ui.mostrarMenu("Menu Principal", "Bem-vindo ao mlStore!\nEscolha uma opção:", opcoes);
 
-            Admin adminLogado = null;
-
-            for (User u : listaUsuarios) {
-                if (u instanceof Admin) {
-                    Admin a = (Admin) u;
-                    if (a.getCodigoDeAcesso().equals(codigoDeAcesso) && a.getPassword().equals(senha)) {
-                        adminLogado = a;
-                        break;
-                    }
+            switch (escolha) {
+                case 0 -> loginAdmin();
+                case 1 -> loginCliente();
+                case 2 -> cadastrarClienteUI();
+                case 3, -1 -> {
+                    rodando = false;
+                    ui.mostrarMensagem("Despedida", "Saindo do sistema... Até logo!");
                 }
             }
-
-            // Fallback: Se não houver nenhum admin cadastrado no sistema, entra com admin/admin
-            if (codigoDeAcesso.equals("admin") && senha.equals("admin")) {
-                adminLogado = new Admin("Administrador Padrão", "admin@mlstore.com", "admin", new Endereco(), "admin");
-                // Adiciona e salva para usos futuros
-                if(listaUsuarios.isEmpty()) {
-                    listaUsuarios.add(adminLogado);
-                    persistenciaUsuarios.salvar(listaUsuarios);
-                }
-            }
-
-            if (adminLogado != null) {
-                JOptionPane.showMessageDialog(null, "Acesso concedido!\nBem-vindo, " + adminLogado.getNomeCompleto() + ".");
-                menuAdmin();
-            } else {
-                JOptionPane.showMessageDialog(null, "Código de Acesso ou Senha incorretos!", "Erro de Login", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            // Silencioso se cancelar
         }
     }
-
-    private static void loginCliente() {
-        try {
-            String cpf = solicitarDado("Digite seu CPF:");
-            String senha = solicitarDado("Digite sua Senha:");
-
-            Cliente clienteLogado = null;
-
-            for (User u : listaUsuarios) {
-                if (u instanceof Cliente) {
-                    Cliente c = (Cliente) u;
-                    if (c.getCpf().equals(cpf) && c.getPassword().equals(senha)) {
-                        clienteLogado = c;
-                        break;
-                    }
-                }
-            }
-
-            if (clienteLogado != null) {
-                JOptionPane.showMessageDialog(null, "Acesso concedido!\nBem-vindo, " + clienteLogado.getNomeCompleto() + ".");
-                menuCliente(clienteLogado);
-            } else {
-                JOptionPane.showMessageDialog(null, "CPF ou Senha incorretos!", "Erro de Login", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            // Silencioso se cancelar
-        }
-    }
-
-    // ================== CADASTROS ==================
-
-    private static void cadastrarCliente() {
-        try {
-            String nomeCompleto = solicitarDado("Nome Completo:");
-            String email = solicitarDado("Email:");
-            String password = solicitarDado("Senha:");
-            String cpf = solicitarDado("CPF:");
-
-            String logradouro = solicitarDado("Endereço - Logradouro (Rua/Av):");
-            String numero = solicitarDado("Endereço - Número:");
-            String bairro = solicitarDado("Endereço - Bairro:");
-            String cidade = solicitarDado("Endereço - Cidade:");
-            String estado = solicitarDado("Endereço - Estado (UF):");
-
-            String complemento = JOptionPane.showInputDialog("Endereço - Complemento (Opcional):");
-            if (complemento == null) complemento = "";
-
-            Endereco endereco = new Endereco(logradouro, numero, bairro, cidade, estado, complemento);
-            Cliente novoCliente = new Cliente(nomeCompleto, email, password, endereco, cpf);
-
-            listaUsuarios.add(novoCliente);
-            persistenciaUsuarios.salvar(listaUsuarios);
-
-            JOptionPane.showMessageDialog(null, "Usuário registrado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage(), "Entrada Inválida", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            // Operação cancelada
-        }
-    }
-
-    // ================== MENUS ==================
 
     private static void menuAdmin() {
         boolean rodando = true;
         while (rodando) {
             String[] opcoes = {"Cadastrar Produto", "Listar Produtos", "Cadastrar Admin", "Voltar"};
-            int escolha = JOptionPane.showOptionDialog(null,
-                    "Painel de Administração", "Menu Admin",
-                    JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
-                    null, opcoes, opcoes[0]);
+            int escolha = ui.mostrarMenu("Menu Admin", "Painel de Administração", opcoes);
 
-            try {
-                switch (escolha) {
-                    case 0:
-                        // Cadastrar Produto
-                        if (listaTipos.isEmpty()) {
-                            JOptionPane.showMessageDialog(null, "Não há Tipos de Produto cadastrados. Cadastrando um tipo padrão 'Geral'...");
-                            TipoProduto tipoPadrao = new TipoProduto("Geral", 10.0);
-                            listaTipos.add(tipoPadrao);
-                            persistenciaTipos.salvar(listaTipos);
-                        }
-
-                        int id = Integer.parseInt(solicitarDado("ID do Produto (Numérico):"));
-                        String nome = solicitarDado("Nome do Produto:");
-                        double preco = Double.parseDouble(solicitarDado("Preço do Produto (Ex: 15.50):"));
-                        int estoque = Integer.parseInt(solicitarDado("Quantidade em Estoque:"));
-
-                        // Mostra opções de tipos
-                        String[] nomesTipos = new String[listaTipos.size()];
-                        for (int i = 0; i < listaTipos.size(); i++) {
-                            nomesTipos[i] = listaTipos.get(i).getNome();
-                        }
-
-                        String tipoEscolhido = (String) JOptionPane.showInputDialog(null, "Escolha o Tipo:",
-                                "Tipo de Produto", JOptionPane.QUESTION_MESSAGE, null, nomesTipos, nomesTipos[0]);
-
-                        if (tipoEscolhido == null) break;
-
-                        TipoProduto tipoSelecionado = null;
-                        for (TipoProduto tp : listaTipos) {
-                            if (tp.getNome().equals(tipoEscolhido)) {
-                                tipoSelecionado = tp;
-                                break;
-                            }
-                        }
-
-                        Produto novoProduto = new Produto(id, nome, preco, estoque, tipoSelecionado);
-                        gerenciadorProduto.cadastrarProduto(novoProduto);
-                        JOptionPane.showMessageDialog(null, "Produto cadastrado com sucesso!");
-                        break;
-
-                    case 1:
-                        // Listar Produtos
-                        List<Produto> produtos = gerenciadorProduto.listarProdutos();
-                        StringBuilder txtProdutos = new StringBuilder("Produtos no Sistema:\n\n");
-                        for (Produto p : produtos) {
-                            txtProdutos.append(p.toString()).append(" | Tipo: ").append(p.getTipo().getNome()).append("\n");
-                        }
-                        mostrarLista("Produtos", txtProdutos.toString());
-                        break;
-
-                    case 2:
-                        // Cadastrar Admin
-                        String nomeAdmin = solicitarDado("Nome do Admin:");
-                        String emailAdmin = solicitarDado("Email:");
-                        String senhaAdmin = solicitarDado("Senha:");
-                        String codigoAcesso = solicitarDado("Código de Acesso (Login):");
-
-                        Admin novoAdmin = new Admin(nomeAdmin, emailAdmin, senhaAdmin, new Endereco(), codigoAcesso);
-                        listaUsuarios.add(novoAdmin);
-                        persistenciaUsuarios.salvar(listaUsuarios);
-                        JOptionPane.showMessageDialog(null, "Admin cadastrado com sucesso!");
-                        break;
-
-                    case 3:
-                    case JOptionPane.CLOSED_OPTION:
-                        rodando = false;
-                        break;
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Erro: Você deve digitar números válidos para ID, Preço e Estoque.", "Erro de Digitação", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Operação cancelada ou erro ocorrido: " + e.getMessage(), "Aviso", JOptionPane.WARNING_MESSAGE);
+            switch (escolha) {
+                case 0 -> cadastrarProdutoUI();
+                case 1 -> listarProdutosUI();
+                case 2 -> cadastrarAdminUI();
+                case 3, -1 -> rodando = false;
             }
         }
     }
@@ -268,102 +91,216 @@ public class Main {
         boolean rodando = true;
         while (rodando) {
             String[] opcoes = {"Ver Catálogo", "Novo Pedido", "Meus Pedidos", "Voltar"};
-            int escolha = JOptionPane.showOptionDialog(null,
-                    "Área do Cliente", "Menu Cliente",
-                    JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
-                    null, opcoes, opcoes[0]);
+            int escolha = ui.mostrarMenu("Menu Cliente", "Área do Cliente: " + cliente.getNomeCompleto(), opcoes);
 
-            try {
-                switch (escolha) {
-                    case 0:
-                        // Catálogo
-                        List<Produto> produtos = gerenciadorProduto.listarProdutos();
-                        StringBuilder txtProdutos = new StringBuilder("Catálogo Disponível:\n\n");
-                        for (Produto p : produtos) {
-                            txtProdutos.append(p.toString()).append("\n");
-                        }
-                        mostrarLista("Catálogo", txtProdutos.toString());
-                        break;
-
-                    case 1:
-                        // Novo Pedido
-                        gerenciadorPedido.criarPedido(cliente);
-
-                        // O último pedido criado pertence a este cliente
-                        List<Pedido> pedidosDoCliente = gerenciadorPedido.listarPedidosPorCliente(cliente.getCpf());
-                        Pedido pedidoAtual = pedidosDoCliente.get(pedidosDoCliente.size() - 1);
-
-                        boolean adicionando = true;
-                        while(adicionando) {
-                            String idBusca = JOptionPane.showInputDialog("Digite o ID do produto para adicionar ao carrinho (ou deixe vazio para finalizar):");
-                            if (idBusca == null || idBusca.trim().isEmpty()) {
-                                adicionando = false;
-                                break;
-                            }
-
-                            try {
-                                Produto produtoEncontrado = gerenciadorProduto.buscarProdutoPorId(Integer.parseInt(idBusca));
-                                gerenciadorPedido.adicionarProduto(pedidoAtual.getIdPedido(), produtoEncontrado);
-                                JOptionPane.showMessageDialog(null, produtoEncontrado.getNome() + " adicionado ao pedido!");
-                            } catch (Exception e) {
-                                JOptionPane.showMessageDialog(null, "Produto não encontrado ou erro: " + e.getMessage());
-                            }
-                        }
-
-                        // Finalizar o pedido se tiver itens
-                        if (!pedidoAtual.getProdutos().isEmpty()) {
-                            gerenciadorPedido.finalizarPedido(pedidoAtual.getIdPedido());
-                            JOptionPane.showMessageDialog(null, "Pedido " + pedidoAtual.getIdPedido() + " finalizado com sucesso!");
-                        } else {
-                            gerenciadorPedido.cancelarPedido(pedidoAtual.getIdPedido());
-                            JOptionPane.showMessageDialog(null, "Pedido cancelado (Carrinho vazio).");
-                        }
-                        break;
-
-                    case 2:
-                        // Histórico de Pedidos
-                        List<Pedido> meusPedidos = gerenciadorPedido.listarPedidosPorCliente(cliente.getCpf());
-                        if (meusPedidos.isEmpty()) {
-                            JOptionPane.showMessageDialog(null, "Você ainda não possui pedidos.");
-                        } else {
-                            StringBuilder txtPedidos = new StringBuilder("Seu Histórico:\n\n");
-                            for (Pedido p : meusPedidos) {
-                                txtPedidos.append("ID: ").append(p.getIdPedido())
-                                        .append(" | Status: ").append(p.getStatus())
-                                        .append(" | R$ ").append(String.format("%.2f", p.getValorTotal())).append("\n");
-                            }
-                            mostrarLista("Meus Pedidos", txtPedidos.toString());
-                        }
-                        break;
-
-                    case 3:
-                    case JOptionPane.CLOSED_OPTION:
-                        rodando = false;
-                        break;
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Erro na operação: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            switch (escolha) {
+                case 0 -> listarProdutosUI();
+                case 1 -> realizarPedidoUI(cliente);
+                case 2 -> listarPedidosClienteUI(cliente);
+                case 3, -1 -> rodando = false;
             }
         }
     }
 
-    // ================== UTILITÁRIOS ==================
+    // ================== AÇÕES DO CLIENTE ==================
 
-    private static String solicitarDado(String mensagem) {
-        String dado = JOptionPane.showInputDialog(mensagem);
-        if (dado == null) {
-            throw new RuntimeException("Cancelado");
+    private static void realizarPedidoUI(Cliente cliente) {
+        try {
+            gerenciadorPedido.criarPedido(cliente);
+            List<Pedido> pedidosDoCliente = gerenciadorPedido.listarPedidosPorCliente(cliente.getCpf());
+            Pedido pedidoAtual = pedidosDoCliente.get(pedidosDoCliente.size() - 1);
+
+            boolean adicionando = true;
+            while (adicionando) {
+                try {
+                    // Usamos o 0 como flag de parada, o que é muito mais seguro que deixar texto vazio
+                    int idBusca = ui.pedirInteiro("Digite o ID do produto para adicionar ao carrinho\n(Ou digite 0 para finalizar o carrinho):");
+
+                    if (idBusca == 0) {
+                        adicionando = false;
+                        break;
+                    }
+
+                    Produto produtoEncontrado = gerenciadorProduto.buscarProdutoPorId(idBusca);
+                    gerenciadorPedido.adicionarProduto(pedidoAtual.getIdPedido(), produtoEncontrado);
+                    ui.mostrarMensagem("Sucesso", produtoEncontrado.getNome() + " adicionado ao carrinho!");
+
+                } catch (ProdutoNaoEncontradoException e) {
+                    ui.mostrarMensagem("Não Encontrado", e.getMessage());
+                }
+            }
+
+            try {
+                gerenciadorPedido.finalizarPedido(pedidoAtual.getIdPedido());
+                ui.mostrarMensagem("Sucesso", "Pedido " + pedidoAtual.getIdPedido() + " finalizado com sucesso!");
+
+            } catch (PedidoVazioException e) {
+                gerenciadorPedido.cancelarPedido(pedidoAtual.getIdPedido());
+                ui.mostrarMensagem("Carrinho Vazio", "Pedido cancelado: " + e.getMessage());
+
+            } catch (PedidoStatusInvalidoException | EstoqueInsuficienteException e) {
+                ui.mostrarErro("Erro no Pedido", "Não foi possível finalizar a compra:\n" + e.getMessage());
+            }
+
+        } catch (OperacaoCanceladaException e) {
+            // Se o usuário clicou em cancelar em algum input, a compra é abortada silenciosamente
+        } catch (Exception e) {
+            ui.mostrarErro("Erro Interno", "Erro inesperado ao processar pedido: " + e.getMessage());
         }
-        if (dado.trim().isEmpty()) {
-            throw new IllegalArgumentException("O campo não pode ficar vazio.");
-        }
-        return dado;
     }
 
-    private static void mostrarLista(String titulo, String conteudo) {
-        if (conteudo.trim().endsWith(":\n")) {
-            conteudo += "Nenhum item encontrado.";
+    private static void listarPedidosClienteUI(Cliente cliente) {
+        List<Pedido> meusPedidos = gerenciadorPedido.listarPedidosPorCliente(cliente.getCpf());
+        if (meusPedidos.isEmpty()) {
+            ui.mostrarMensagem("Histórico", "Você ainda não possui pedidos.");
+            return;
         }
-        JOptionPane.showMessageDialog(null, conteudo, titulo, JOptionPane.INFORMATION_MESSAGE);
+
+        StringBuilder txtPedidos = new StringBuilder("Seu Histórico:\n\n");
+        for (Pedido p : meusPedidos) {
+            txtPedidos.append("ID: ").append(p.getIdPedido())
+                    .append(" | Status: ").append(p.getStatus())
+                    .append(" | Total: R$ ").append(String.format("%.2f", p.getValorTotal()))
+                    .append("\n");
+        }
+        ui.mostrarMensagem("Meus Pedidos", txtPedidos.toString());
+    }
+
+    // ================== AÇÕES DO ADMIN ==================
+
+    private static void cadastrarProdutoUI() {
+        try {
+            if (listaTipos.isEmpty()) {
+                ui.mostrarMensagem("Aviso", "Não há Tipos de Produto cadastrados. Cadastrando 'Geral' padrão...");
+                TipoProduto tipoPadrao = new TipoProduto("Geral", 10.0);
+                listaTipos.add(tipoPadrao);
+                persistenciaTipos.salvar(listaTipos);
+            }
+
+            int id = ui.pedirInteiro("ID do Produto (Numérico):");
+            String nome = ui.pedirTexto("Nome do Produto:");
+            double preco = ui.pedirDouble("Preço do Produto (Ex: 15.50):");
+            int estoque = ui.pedirInteiro("Quantidade em Estoque:");
+
+            String[] nomesTipos = listaTipos.stream().map(TipoProduto::getNome).toArray(String[]::new);
+            int indexTipo = ui.mostrarMenu("Tipo de Produto", "Escolha o Tipo:", nomesTipos);
+
+            if (indexTipo == -1) return; // Cancelou a escolha do tipo
+
+            TipoProduto tipoSelecionado = listaTipos.get(indexTipo);
+
+            Produto novoProduto = new Produto(id, nome, preco, estoque, tipoSelecionado);
+            gerenciadorProduto.cadastrarProduto(novoProduto);
+
+            ui.mostrarMensagem("Sucesso", "Produto cadastrado com sucesso!");
+
+        } catch (OperacaoCanceladaException e) {
+            // Sai silenciosamente e volta pro menu
+        } catch (Exception e) {
+            ui.mostrarErro("Erro", "Falha ao cadastrar: " + e.getMessage());
+        }
+    }
+
+    private static void listarProdutosUI() {
+        List<Produto> produtos = gerenciadorProduto.listarProdutos();
+        if (produtos.isEmpty()) {
+            ui.mostrarMensagem("Catálogo", "Nenhum produto cadastrado no momento.");
+            return;
+        }
+
+        StringBuilder txtProdutos = new StringBuilder("Catálogo Disponível:\n\n");
+        for (Produto p : produtos) {
+            txtProdutos.append("ID: ").append(p.getId()).append(" | ").append(p.toString())
+                    .append(" | Tipo: ").append(p.getTipo().getNome()).append("\n");
+        }
+        ui.mostrarMensagem("Produtos", txtProdutos.toString());
+    }
+
+    // ================== LOGINS E CADASTROS DE USUÁRIOS ==================
+
+    private static void loginAdmin() {
+        try {
+            String codigo = ui.pedirTexto("Digite o Código de Acesso do Admin:");
+            String senha = ui.pedirTexto("Digite a Senha:");
+
+            for (User u : listaUsuarios) {
+                if (u instanceof Admin a && a.getCodigoDeAcesso().equals(codigo) && a.getPassword().equals(senha)) {
+                    ui.mostrarMensagem("Login", "Bem-vindo, " + a.getNomeCompleto() + ".");
+                    menuAdmin();
+                    return;
+                }
+            }
+
+            // Fallback de admin padrão se não achar nenhum
+            if (codigo.equals("admin") && senha.equals("admin")) {
+                ui.mostrarMensagem("Login", "Bem-vindo, Administrador Padrão.");
+                menuAdmin();
+                return;
+            }
+
+            ui.mostrarErro("Erro", "Credenciais inválidas!");
+        } catch (OperacaoCanceladaException e) { /* Volta pro menu */ }
+    }
+
+    private static void loginCliente() {
+        try {
+            String cpf = ui.pedirTexto("Digite seu CPF:");
+            String senha = ui.pedirTexto("Digite sua Senha:");
+
+            for (User u : listaUsuarios) {
+                if (u instanceof Cliente c && c.getCpf().equals(cpf) && c.getPassword().equals(senha)) {
+                    ui.mostrarMensagem("Login", "Bem-vindo, " + c.getNomeCompleto() + ".");
+                    menuCliente(c);
+                    return;
+                }
+            }
+            ui.mostrarErro("Erro", "Credenciais inválidas!");
+        } catch (OperacaoCanceladaException e) { /* Volta pro menu */ }
+    }
+
+    private static void cadastrarClienteUI() {
+        try {
+            String nomeCompleto = ui.pedirTexto("Nome Completo:");
+            String email = ui.pedirTexto("Email:");
+            String password = ui.pedirTexto("Senha:");
+            String cpf = ui.pedirTexto("CPF:");
+            String logradouro = ui.pedirTexto("Endereço - Logradouro (Rua/Av):");
+            String numero = ui.pedirTexto("Endereço - Número:");
+            String bairro = ui.pedirTexto("Endereço - Bairro:");
+            String cidade = ui.pedirTexto("Endereço - Cidade:");
+            String estado = ui.pedirTexto("Endereço - Estado (UF):");
+
+            // Opcional pode ficar com um traço se a pessoa digitar vazio, pois a nossa ui.pedirTexto impede strings vazias
+            String complemento = ui.pedirTexto("Endereço - Complemento (Digite '-' se não houver):");
+
+            Endereco endereco = new Endereco(logradouro, numero, bairro, cidade, estado, complemento);
+            Cliente novoCliente = new Cliente(nomeCompleto, email, password, endereco, cpf);
+
+            listaUsuarios.add(novoCliente);
+            persistenciaUsuarios.salvar(listaUsuarios);
+
+            ui.mostrarMensagem("Sucesso", "Cliente registrado com sucesso!");
+        } catch (OperacaoCanceladaException e) {
+            // Cadastro cancelado no meio
+        } catch (Exception e) {
+            ui.mostrarErro("Erro", "Falha ao registrar cliente: " + e.getMessage());
+        }
+    }
+
+    private static void cadastrarAdminUI() {
+        try {
+            String nome = ui.pedirTexto("Nome do Admin:");
+            String email = ui.pedirTexto("Email:");
+            String senha = ui.pedirTexto("Senha:");
+            String codigo = ui.pedirTexto("Código de Acesso (Login):");
+
+            Admin novoAdmin = new Admin(nome, email, senha, new Endereco(), codigo);
+            listaUsuarios.add(novoAdmin);
+            persistenciaUsuarios.salvar(listaUsuarios);
+            ui.mostrarMensagem("Sucesso", "Admin cadastrado com sucesso!");
+        } catch (OperacaoCanceladaException e) { /* Volta pro menu */ }
+        catch (Exception e) {
+            ui.mostrarErro("Erro", "Falha ao registrar admin: " + e.getMessage());
+        }
     }
 }

@@ -33,16 +33,22 @@ public class PersistenciaDePedidos extends Persistencia {
         }
         salvarLinhas(linhas, CAMINHO);
     }
-    public List<Pedido> carregar(List<User> usuarios, List<Produto> produtos) throws IOException{
+    public List<Pedido> carregar(List<User> usuarios, List<Produto> produtos) throws IOException {
         List<Pedido> pedidos = new ArrayList<>();
 
         for (String linha : carregarLinhas(CAMINHO)) {
             String[] partes = linha.split(";");
-            if (partes.length != 5) {
-                throw new ArquivoCorrompidoException(CAMINHO);
+
+            // Se o arquivo tiver uma linha vazia, ele pula pra evitar erro
+            if (linha.trim().isEmpty()) {
+                continue;
             }
 
-            // busca o cliente pelo ID
+            if (partes.length != 5) {
+                throw new ArquivoCorrompidoException("Erro ao ler pedidos: " + CAMINHO);
+            }
+
+            // 1. Busca o cliente pelo CPF
             Cliente cliente = null;
             for (User u : usuarios) {
                 if (u instanceof Cliente c && c.getCpf().equals(partes[1])) {
@@ -51,21 +57,34 @@ public class PersistenciaDePedidos extends Persistencia {
                 }
             }
 
-            // reconstrói a lista de produtos do pedido
+            // 2. Reconstrói a lista de produtos do pedido
             List<Produto> produtosDoPedido = new ArrayList<>();
-            String[] idsProdutos = partes[2].split(",");
-            for (String id : idsProdutos) {
-                int idInt = Integer.parseInt(id);
-                for (Produto p : produtos) {
-                    if (p.getId() == idInt) {
-                        produtosDoPedido.add(p);
-                        break;
+
+
+            // Só tenta quebrar a string e converter para número se a coluna NÃO estiver vazia
+            if (!partes[2].trim().isEmpty()) {
+                String[] idsProdutos = partes[2].split(",");
+                for (String id : idsProdutos) {
+                    int idInt = Integer.parseInt(id.trim()); // .trim() protege contra espaços acidentais como " 1"
+
+                    for (Produto p : produtos) {
+                        if (p.getId() == idInt) {
+                            produtosDoPedido.add(p);
+                            break; // Achou o produto, para a busca interna
+                        }
                     }
                 }
             }
+            // =================================
 
-            pedidos.add(new Pedido(partes[0], cliente, produtosDoPedido,
-                    Double.parseDouble(partes[3]), partes[4]));
+            // 3. Adiciona o pedido na lista
+            pedidos.add(new Pedido(
+                    partes[0],
+                    cliente,
+                    produtosDoPedido,
+                    Double.parseDouble(partes[3]),
+                    partes[4]
+            ));
         }
 
         return pedidos;

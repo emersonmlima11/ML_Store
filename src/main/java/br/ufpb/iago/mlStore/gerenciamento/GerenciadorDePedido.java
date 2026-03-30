@@ -2,6 +2,9 @@ package br.ufpb.iago.mlStore.gerenciamento;
 
 import br.ufpb.iago.mlStore.armazenamento.PersistenciaDePedidos;
 import br.ufpb.iago.mlStore.armazenamento.PersistenciaDeUsuarios;
+import br.ufpb.iago.mlStore.excepcions.EstoqueInsuficienteException;
+import br.ufpb.iago.mlStore.excepcions.PedidoStatusInvalidoException;
+import br.ufpb.iago.mlStore.excepcions.PedidoVazioException;
 import br.ufpb.iago.mlStore.modelo.*;
 
 import java.io.IOException;
@@ -59,9 +62,12 @@ public class GerenciadorDePedido {
         pdp.salvar(pedidos);
     }
 
-    public void finalizarPedido(String idPedido) throws IOException{
+    public void finalizarPedido(String idPedido) throws IOException, PedidoStatusInvalidoException, PedidoVazioException, EstoqueInsuficienteException {
         Pedido pedido = buscarPedidoPorId(idPedido);
+
+
         pedido.finalizarPedido();
+
         pdp.salvar(pedidos);
     }
 

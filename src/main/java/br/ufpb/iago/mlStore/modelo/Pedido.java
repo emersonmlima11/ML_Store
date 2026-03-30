@@ -1,6 +1,8 @@
 package br.ufpb.iago.mlStore.modelo;
 
 import br.ufpb.iago.mlStore.excepcions.EstoqueInsuficienteException;
+import br.ufpb.iago.mlStore.excepcions.PedidoStatusInvalidoException;
+import br.ufpb.iago.mlStore.excepcions.PedidoVazioException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,17 +41,12 @@ public class Pedido {
         return produtos;
     }
 
-
-    public void addProdutos(Produto produto){
-        if(produto != null){
-            this.produtos.add(produto);
-            this.valorTotal += produto.getPreco();
-
-            System.out.println(produto.getNome() + " adicionado com sucesso");
+    public void addProdutos(Produto produto) {
+        if (produto == null) {
+            throw new IllegalArgumentException("Erro: O produto não pode ser nulo.");
         }
-        else{
-            System.out.println("Erro ao adicionar produto");
-        }
+        this.produtos.add(produto);
+        this.valorTotal += produto.getPreco();
     }
 
     public void exibirResumo() {
@@ -75,37 +72,27 @@ public class Pedido {
         System.out.println("========================\n");
     }
 
-    public void finalizarPedido() {
+    public void finalizarPedido() throws PedidoStatusInvalidoException, PedidoVazioException, EstoqueInsuficienteException {
+
         if (!this.status.equals("ABERTO")) {
-            System.out.println("Atenção: Este pedido já se encontra " + this.status + ".");
-            return;
+            throw new PedidoStatusInvalidoException("Não é possível finalizar: Este pedido já se encontra " + this.status + ".");
         }
 
         if (this.produtos.isEmpty()) {
-            System.out.println("Não é possível finalizar um pedido sem itens no carrinho.");
-            return;
+            throw new PedidoVazioException("Não é possível finalizar um pedido sem itens no carrinho.");
         }
 
-        boolean todosComStock = true;
-
+        // Tenta vender os itens. Se der EstoqueInsuficienteException,
+        // a exceção VAI SUBIR direto, não faça try/catch aqui!
         for (Produto produto : this.produtos) {
-            try {
-                produto.vender(1);
-            } catch (EstoqueInsuficienteException e) {
-                System.out.println("Erro ao processar pedido: " + e.getMessage());
-                todosComStock = false;
-            } catch (IllegalArgumentException e) {
-                System.out.println("Erro de validação: " + e.getMessage());
-                todosComStock = false;
-            }
+            produto.vender(1); // Se falhar aqui, o método para imediatamente e joga a exceção pra cima
         }
 
-        if (todosComStock) {
-            this.status = "CONCLUIDO";
-            System.out.println("Sucesso! Pedido " + this.idPedido + " finalizado. Valor total cobrado: R$ " + String.format("%.2f", this.valorTotal));
-        } else {
-            System.out.println("O pedido não pôde ser finalizado devido a erros nos itens.");
-        }
+        // Se passou do loop, é porque tinha estoque de tudo
+        this.status = "CONCLUIDO";
+
+        // REMOVIDO: System.out.println("Sucesso! Pedido...");
+        // O Sucesso não deve ser impresso pelo modelo. A interface grafica vai ver que a exceção não foi jogada e exibirá o sucesso.
     }
 
     public String getIdPedido() {
