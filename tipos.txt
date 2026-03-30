@@ -1,3 +1,1 @@
 Eletrônico;15.0
-Roupa;10.0
-Alimento;5.0
